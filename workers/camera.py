@@ -18,7 +18,7 @@ ROTATE_ANGLE = 90
 
 def main():
     camera = Picamera2()
-    camera.configure(camera.create_still_configuration(main={"rotation": ROTATE_ANGLE}))
+    camera.configure(camera.create_still_configuration())
     camera.start()
 
     os.makedirs(SAVE_DIR, exist_ok=True)
