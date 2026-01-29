@@ -11,7 +11,7 @@ from picamera2 import Picamera2
 
 FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
-SAVE_DIR = "./pictures"
+SAVE_DIR = "../pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
 def main():

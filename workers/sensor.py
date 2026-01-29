@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timedelta
 from smbus2 import SMBus
 
-DB_FILE = "./db.sqlite3"
+DB_FILE = "../db.sqlite3"
 FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
 
