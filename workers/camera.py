@@ -8,15 +8,17 @@ from datetime import datetime, timedelta
 import time
 import os
 from picamera2 import Picamera2
+from PIL import Image
 
 FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
 SAVE_DIR = "../pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
+ROTATE_ANGLE = 90
 
 def main():
     camera = Picamera2()
-    camera.configure(camera.create_still_configuration())
+    camera.configure(camera.create_still_configuration(main={"rotation": ROTATE_ANGLE}))
     camera.start()
 
     os.makedirs(SAVE_DIR, exist_ok=True)
@@ -24,7 +26,10 @@ def main():
     while True:
         filename = datetime.now().strftime(DATETIME_FORMAT)
         path = os.path.join(SAVE_DIR, f"{filename}.jpg")
-        camera.capture_file(path)
+        image = camera.capture_array()
+        img = Image.fromarray(image).rotate(ROTATE_ANGLE, expand=True)
+        img.save(path)
+
         print(f"Captured {filename}")
 
         # Cleanup old pictures

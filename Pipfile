@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 django = "*"
 smbus2 = "*"
+pillow = "*"
 
 [dev-packages]
 
