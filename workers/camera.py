@@ -14,7 +14,7 @@ FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
 SAVE_DIR = "../pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
-ROTATE_ANGLE = 90
+ROTATE_ANGLE = -90
 
 def main():
     camera = Picamera2()
