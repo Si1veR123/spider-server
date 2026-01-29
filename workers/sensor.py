@@ -6,7 +6,7 @@ import sqlite3
 import time
 import os
 from datetime import datetime, timedelta
-from smbus2 import SMBus
+from smbus2 import SMBus, i2c_msg
 
 DB_FILE = "../db.sqlite3"
 FREQUENCY = 10
@@ -32,9 +32,11 @@ def read_sensor():
         time.sleep(0.02)
         # Read the 6 byte response
         # Format: Temp MSB, Temp LSB, Temp CRC, RH MSB, RH LSB, RH CRC
-        data = bus.read_i2c_block_data(SHT40_ADDR, 0, 6)
+        read = i2c_msg.read(SHT40_ADDR, 6)
+        bus.i2c_rdwr(read)
 
     # Combine the bytes
+    data = list(read)
     raw_temp = (data[0] << 8) | data[1]
     raw_humidity = (data[3] << 8) | data[4]
 
