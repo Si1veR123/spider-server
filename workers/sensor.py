@@ -79,14 +79,11 @@ def main():
 
     while True:
         try:
-            raw_temp, raw_humidity = read_sensor()
-            temp = convert_temp(raw_temp)
-            humidity = convert_humidity(raw_humidity)
+            temp, humidity = read_sensor()
             timestamp = datetime.now().isoformat()
-
-            insert_reading(timestamp, temp, humidity)
             print(f"[{timestamp}] Temp: {temp:.2f}°C, Humidity: {humidity:.2f}%")
 
+            insert_reading(timestamp, temp, humidity)
             cleanup_old_readings()
         except Exception as e:
             print(f"Error reading sensor or saving data: {e}")
