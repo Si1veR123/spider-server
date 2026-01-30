@@ -1,9 +1,13 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import os
+from datetime import timedelta
 
 DB_PATH = "db.sqlite3"
 PICTURES_PATH = "static/pictures/"
+PASSWORD = os.environ.get("SPIDER_SERVER_PASSWORD")
+if not PASSWORD:
+    raise ValueError("SPIDER_SERVER_PASSWORD environment variable not set")
 
 def get_latest_reading():
     conn = sqlite3.connect(DB_PATH)
@@ -30,6 +34,32 @@ def get_latest_reading():
     }
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SPIDER_SERVER_SECRET_KEY")
+if not app.secret_key:
+    raise ValueError("SPIDER_SERVER_SECRET_KEY environment variable not set")
+app.permanent_session_lifetime = timedelta(days=7)
+
+@app.before_request
+def require_login():
+    # Allow /auth without login
+    if request.endpoint in ("auth"):
+        return
+    # If not logged in, redirect to /auth
+    if not session.get("logged_in"):
+        return redirect(url_for("auth"))
+
+@app.route("/auth", methods=["GET", "POST"])
+def auth():
+    error = None
+    if request.method == "POST":
+        print(request.form.get("password"), PASSWORD)
+        if request.form.get("password") == PASSWORD:
+            session["logged_in"] = True
+            session.permanent = True
+            return redirect(url_for("index"))
+        else:
+            error = "Incorrect password"
+    return render_template("auth.html", error=error)
 
 @app.route("/")
 def index():
