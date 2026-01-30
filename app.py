@@ -76,8 +76,8 @@ def index():
 
     return render_template(
         "main.html",
-        recent_rh = f"{reading['humidity']}%" if reading else "None",
-        recent_temperature = f"{reading['temperature']}°C" if reading else "None",
+        recent_rh = f"{reading['humidity']:.2f}%" if reading else "None",
+        recent_temperature = f"{reading['temperature']:.2f}°C" if reading else "None",
         recent_picture=recent_picture_url
     )
 

@@ -11,13 +11,21 @@ import smtplib
 from email.message import EmailMessage
 
 # EMAIL WARNINGS
+USING_GMAIL = True
 GMAIL_USER = os.environ.get("GMAIL_USER")
 if not GMAIL_USER:
-    raise ValueError("GMAIL_USER environment variable not set")
+    print("GMAIL_USER environment variable not set, email warnings disabled")
+    USING_GMAIL = False
+
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
-if not GMAIL_APP_PASSWORD:
-    raise ValueError("GMAIL_APP_PASSWORD environment variable not set")
+if not GMAIL_APP_PASSWORD and USING_GMAIL:
+    print("GMAIL_APP_PASSWORD environment variable not set, email warnings disabled")
+    USING_GMAIL = False
+
 GMAIL_RECIPIENT = os.environ.get("GMAIL_RECIPIENT")
+if not GMAIL_RECIPIENT and USING_GMAIL:
+    print("GMAIL_RECIPIENT environment variable not set, email warnings disabled")
+    USING_GMAIL = False
 
 SPIDER_WARNING_EMAIL_TEMPLATE = """
 <html>
@@ -150,10 +158,12 @@ def main():
                 message = "Humidity too low!"
             elif humidity > MAX_HUMIDITY:
                 message = "Humidity too high!"
-            if message:
+            print(f"Warning message: {message}")
+
+            if message and USING_GMAIL:
+                print("Sending warning email...")
                 html = generate_warning_email_html(message, timestamp, temp, humidity)
                 send_email(f"ALERT: {message}", html, GMAIL_RECIPIENT)
-                print(f"Sent warning email: {message}")
 
             insert_reading(timestamp, temp, humidity)
             cleanup_old_readings()
