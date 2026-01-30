@@ -3,7 +3,7 @@ import sqlite3
 import os
 
 DB_PATH = "db.sqlite3"
-PICTURES_PATH = "pictures/"
+PICTURES_PATH = "static/pictures/"
 
 def get_latest_reading():
     conn = sqlite3.connect(DB_PATH)
