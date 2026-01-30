@@ -42,7 +42,7 @@ app.permanent_session_lifetime = timedelta(days=7)
 @app.before_request
 def require_login():
     # Allow /auth without login
-    if request.endpoint in ("auth"):
+    if request.endpoint == "auth":
         return
     # If not logged in, redirect to /auth
     if not session.get("logged_in"):
