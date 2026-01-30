@@ -7,15 +7,71 @@ import time
 import os
 from datetime import datetime, timedelta
 from smbus2 import SMBus, i2c_msg
+import smtplib
+from email.message import EmailMessage
 
+# EMAIL WARNINGS
+GMAIL_USER = os.environ.get("GMAIL_USER")
+if not GMAIL_USER:
+    raise ValueError("GMAIL_USER environment variable not set")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+if not GMAIL_APP_PASSWORD:
+    raise ValueError("GMAIL_APP_PASSWORD environment variable not set")
+GMAIL_RECIPIENT = os.environ.get("GMAIL_RECIPIENT")
+
+SPIDER_WARNING_EMAIL_TEMPLATE = """
+<html>
+<body>
+    <p>{message}</p>
+    <ul>
+    <li>Timestamp: {timestamp}</li>
+    <li>Temperature: {temperature:.2f} °C</li>
+    <li>Humidity: {humidity:.2f} %</li>
+    </ul>
+</body>
+</html>
+"""
+
+MIN_TEMPERATURE = 22.0
+MAX_TEMPERATURE = 28.0
+MIN_HUMIDITY = 50.0
+MAX_HUMIDITY = 75.0
+
+# DATABASE CONFIG
 DB_FILE = "../db.sqlite3"
 FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
 
+# I2C CONFI
 I2C_BUS = 1
 SHT40_ADDR = 0x44
 # high precision
 CMD_MEASURE = 0xFD
+
+def generate_warning_email_html(message, timestamp, temperature, humidity):
+    return SPIDER_WARNING_EMAIL_TEMPLATE.format(
+        message=message,
+        timestamp=timestamp,
+        temperature=temperature,
+        humidity=humidity
+    )
+
+def send_email(subject: str, html: str, recipient: str):
+    msg = EmailMessage()
+    msg["From"] = GMAIL_USER
+    msg["To"] = recipient
+    msg["Subject"] = subject
+
+    # High importance
+    msg["X-Priority"] = "1"
+    msg["Importance"] = "High"
+    msg["X-MSMail-Priority"] = "High"
+
+    msg.set_content(html, subtype="html")
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        smtp.send_message(msg)
 
 def convert_temp(raw_value):
     centigrade = -45 + 175 * (raw_value / (2**16 - 1))
@@ -84,6 +140,20 @@ def main():
             temp, humidity = read_sensor()
             timestamp = datetime.now().isoformat()
             print(f"[{timestamp}] Temp: {temp:.2f}°C, Humidity: {humidity:.2f}%")
+
+            message = None
+            if temp < MIN_TEMPERATURE:
+                message = "Temperature too low!"
+            elif temp > MAX_TEMPERATURE:
+                message = "Temperature too high!"
+            elif humidity < MIN_HUMIDITY:
+                message = "Humidity too low!"
+            elif humidity > MAX_HUMIDITY:
+                message = "Humidity too high!"
+            if message:
+                html = generate_warning_email_html(message, timestamp, temp, humidity)
+                send_email(f"ALERT: {message}", html, GMAIL_RECIPIENT)
+                print(f"Sent warning email: {message}")
 
             insert_reading(timestamp, temp, humidity)
             cleanup_old_readings()
