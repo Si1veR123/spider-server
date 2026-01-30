@@ -27,11 +27,14 @@ def get_latest_reading():
     if row is None:
         return None
 
-    return {
-        "timestamp": row["timestamp"],
-        "temperature": row["temperature"],
-        "humidity": row["humidity"],
-    }
+    return row
+
+def get_latest_picture_url():
+    pictures = sorted(os.listdir(PICTURES_PATH), reverse=True)
+    if pictures:
+        recent_picture = pictures[0]
+        return f"/static/pictures/{recent_picture}"
+    return None
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SPIDER_SERVER_SECRET_KEY")
@@ -61,23 +64,37 @@ def auth():
             error = "Incorrect password"
     return render_template("auth.html", error=error)
 
+@app.route("/latest")
+def latest():
+    reading = get_latest_reading()
+    recent_picture_url = get_latest_picture_url()
+
+    if reading is None and recent_picture_url is None:
+        return {"error": "No readings/pictures found"}, 404
+
+    return {
+        "timestamp": reading["timestamp"] if reading else None,
+        "temperature": reading["temperature"] if reading else None,
+        "humidity": reading["humidity"] if reading else None,
+        "recent_picture": recent_picture_url
+    }
+
 @app.route("/")
 def index():
     reading = get_latest_reading()
+    recent_picture_url = get_latest_picture_url()
 
-    # sort filenames by time
-    pictures = sorted(os.listdir(PICTURES_PATH), reverse=True)
-
-    if pictures:
-        recent_picture = pictures[0]
-        recent_picture_url = f"/static/pictures/{recent_picture}"
+    if reading:
+        recent_temperature = f"{reading["temperature"]:.2f} °C"
+        recent_rh = f"{reading["humidity"]:.2f} %"
     else:
-        recent_picture_url = None
+        recent_temperature = "None"
+        recent_rh = "None"
 
     return render_template(
         "main.html",
-        recent_rh = f"{reading['humidity']:.2f}%" if reading else "None",
-        recent_temperature = f"{reading['temperature']:.2f}°C" if reading else "None",
+        recent_temperature=recent_temperature,
+        recent_rh=recent_rh,
         recent_picture=recent_picture_url
     )
 

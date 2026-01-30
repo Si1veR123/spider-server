@@ -26,6 +26,7 @@
             padding: 15px 25px;
             border-radius: 10px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            text-align: center;
         }
 
         img {
@@ -33,20 +34,61 @@
             height: auto;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <h1>Spider Server</h1>
-    <div class="reading">
+    <div class="reading" id="reading">
         Temperature: {{ recent_temperature }} <br>
         Humidity: {{ recent_rh }}
     </div>
 
     {% if recent_picture %}
-        <img src="{{ recent_picture }}" alt="Latest capture">
+    <img id="latest-picture" src="{{ recent_picture }}" alt="Latest capture">
+    <p id="no-picture" style="display: none;">No picture available</p>
     {% else %}
-        <p>No picture available</p>
+    <img id="latest-picture" style="display: none;" alt="Latest capture">
+    <p id="no-picture">No picture available</p>
     {% endif %}
+
+    <script>
+        async function fetchLatest() {
+            try {
+                const response = await fetch("/latest");
+                if (!response.ok) {
+                    console.error("Failed to fetch latest reading:", response.statusText);
+                    return;
+                }
+                const data = await response.json();
+
+                // Update reading
+                const readingDiv = document.getElementById("reading");
+                let temp_string = data.temperature !== null ? data.temperature.toFixed(2) + "°C" : "None";
+                let rh_string = data.humidity !== null ? data.humidity.toFixed(2) + "%" : "None";
+
+                readingDiv.innerHTML = `Temperature: ${temp_string} <br> Humidity: ${rh_string}`;
+
+                // Update picture
+                const img = document.getElementById("latest-picture");
+                const noPicture = document.getElementById("no-picture");
+
+                if (data.recent_picture) {
+                    img.src = data.recent_picture + "?t=" + new Date().getTime(); // prevent caching
+                    img.style.display = "block";
+                    noPicture.style.display = "none";
+                } else {
+                    img.style.display = "none";
+                    noPicture.style.display = "block";
+                }
+            } catch (err) {
+                console.error("Error fetching latest reading:", err);
+            }
+        }
+
+        fetchLatest();
+        setInterval(fetchLatest, 10000);
+    </script>
 </body>
 </html>
