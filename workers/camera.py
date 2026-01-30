@@ -12,7 +12,7 @@ from PIL import Image
 
 FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
-SAVE_DIR = "../pictures"
+SAVE_DIR = "../static/pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 ROTATE_ANGLE = -90
 
