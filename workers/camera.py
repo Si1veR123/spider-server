@@ -182,7 +182,7 @@ def picture_thread(generate_small=False):
 def timelapse_thread():
     while True:
         print("Generating timelapse...")
-        generate_timelapse(SAVE_DIR)
+        generate_timelapse()
 
         time.sleep(TIMELAPSE_GENERATE_FREQUENCY)
 
