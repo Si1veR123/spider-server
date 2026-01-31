@@ -156,8 +156,10 @@ def picture_thread(generate_small=False):
         img.save(path)
 
         if generate_small:
+            width =  int(img.width * SMALL_SCALE) // 2 * 2
+            height = int(img.height * SMALL_SCALE) // 2 * 2
             small_img = img.resize(
-                (int(img.width * SMALL_SCALE), int(img.height * SMALL_SCALE)),
+                (width, height),
                 Image.LANCZOS
             )
             small_path = os.path.join(SAVE_DIR, f"{filename}_small.jpg")
