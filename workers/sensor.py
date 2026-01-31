@@ -146,8 +146,7 @@ def cleanup_old_readings():
 def main():
     init_db()
 
-    sent_temperature_warning = False
-    sent_humidity_warning = False
+    last_warning_time = datetime.min
 
     while True:
         try:
@@ -158,28 +157,19 @@ def main():
             message = None
             if temp < MIN_TEMPERATURE:
                 message = "Temperature too low!"
-                sent_temperature_warning = True
             elif temp > MAX_TEMPERATURE:
                 message = "Temperature too high!"
-                sent_temperature_warning = True
-            else:
-                sent_temperature_warning = False
-
-            if humidity < MIN_HUMIDITY:
+            elif humidity < MIN_HUMIDITY:
                 message = "Humidity too low!"
-                sent_humidity_warning = True
             elif humidity > MAX_HUMIDITY:
                 message = "Humidity too high!"
-                sent_humidity_warning = True
-            else:
-                sent_humidity_warning = False
-
             print(f"Warning message: {message}")
 
-            if message and USING_GMAIL:
+            if message and USING_GMAIL and (datetime.now() - last_warning_time).total_seconds() > 60 * 60:
                 print("Sending warning email...")
                 html = generate_warning_email_html(message, timestamp, temp, humidity)
                 send_email(f"ALERT: {message}", html, GMAIL_RECIPIENT)
+                last_warning_time = datetime.now()
 
             insert_reading(timestamp, temp, humidity)
             cleanup_old_readings()
