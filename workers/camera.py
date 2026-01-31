@@ -70,21 +70,22 @@ def generate_timelapse(
         print("Warning: No images found for timelapse")
         return
 
-    # Input framerate controls timelapse speed
     input_fps = num_images / TIMELAPSE_LENGTH
     input_fps = max(1, input_fps)
 
     # Split into chunks to reduce memory usage
-    frames_per_chunk = int(input_fps * TIMELAPSE_SPLIT)
-    num_chunks = ceil(num_images / frames_per_chunk)
+    skip_frames_per_chunk = int(input_fps * TIMELAPSE_SPLIT)
+    num_chunks = ceil(num_images / skip_frames_per_chunk)
 
     chunk_files = []
 
     for chunk_i in range(num_chunks):
-        start_idx = chunk_i * frames_per_chunk
-        end_idx = min(start_idx + frames_per_chunk, num_images)
+        start_idx = chunk_i * skip_frames_per_chunk
+        end_idx = min(start_idx + skip_frames_per_chunk, num_images)
 
-        chunk_images = images[start_idx:end_idx]
+        # Sample TIMELAPSE_FPS frames from this chunk
+        step = max(1, int(input_fps / TIMELAPSE_FPS))
+        chunk_images = images[start_idx:end_idx:step]
 
         if not chunk_images:
             continue
