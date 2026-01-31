@@ -5,6 +5,7 @@ Save to a directory with timestamp.
 """
 
 from datetime import datetime, timedelta
+import gc
 import time
 import os
 from picamera2 import Picamera2
@@ -29,6 +30,10 @@ def main():
         image = camera.capture_array()
         img = Image.fromarray(image).rotate(ROTATE_ANGLE, expand=True)
         img.save(path)
+
+        del image
+        del img
+        gc.collect()
 
         print(f"Captured {filename}")
 
