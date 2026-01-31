@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import gc
 import time
 import os
-#from picamera2 import Picamera2
+from picamera2 import Picamera2
 from PIL import Image, ImageDraw, ImageFont
 from math import ceil
 import subprocess
@@ -127,7 +127,7 @@ def ffmpeg_installed():
         return True
     except FileNotFoundError:
         return False
-"""
+
 def picture_thread():
     camera = Picamera2()
     camera.configure(camera.create_still_configuration())
@@ -170,7 +170,7 @@ def picture_thread():
                     print(f"Deleted old picture {file}")
 
         time.sleep(PICTURE_FREQUENCY)
-"""
+
 def timelapse_thread():
     while True:
         print("Generating timelapse...")
@@ -186,15 +186,15 @@ def main():
         print("Warning: ffmpeg not found, disabling timelapse generation.")
         use_timelapse = False
     
-    #pic_thread = threading.Thread(target=picture_thread, daemon=True)
-    #pic_thread.start()
+    pic_thread = threading.Thread(target=picture_thread, daemon=True)
+    pic_thread.start()
 
     if use_timelapse:
         tl_thread = threading.Thread(target=timelapse_thread, daemon=True)
         tl_thread.start()
         tl_thread.join()
 
-    #pic_thread.join()
+    pic_thread.join()
 
 if __name__ == "__main__":
     main()
