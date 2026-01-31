@@ -42,6 +42,8 @@ if not app.secret_key:
     raise ValueError("SPIDER_SERVER_SECRET_KEY environment variable not set")
 app.permanent_session_lifetime = timedelta(days=7)
 
+# AUTHENTICATION
+
 @app.before_request
 def require_login():
     # Allow /auth without login
@@ -70,7 +72,9 @@ def auth():
             error = "Incorrect password"
     return render_template("auth.html", error=error)
 
-@app.route("/latest")
+# API
+
+@app.route("/data/latest")
 def latest():
     reading = get_latest_reading()
     recent_picture_url = get_latest_picture_url()
@@ -84,6 +88,33 @@ def latest():
         "humidity": reading["humidity"] if reading else None,
         "recent_picture": recent_picture_url
     }
+
+@app.route("/data/history")
+def history():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT timestamp, temperature, humidity
+        FROM readings
+        ORDER BY timestamp DESC
+    """)
+
+    rows = cur.fetchall()
+    conn.close()
+
+    history_data = []
+    for row in rows:
+        history_data.append({
+            "timestamp": row["timestamp"],
+            "temperature": row["temperature"],
+            "humidity": row["humidity"]
+        })
+
+    return {"history": history_data}
+
+# PAGES
 
 @app.route("/")
 def index():
@@ -104,9 +135,9 @@ def index():
         recent_picture=recent_picture_url
     )
 
-@app.route("/timelapse")
-def timelapse():
-    return render_template("timelapse.html")
+@app.route("/history")
+def history():
+    return render_template("history.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, threaded=False)

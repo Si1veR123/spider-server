@@ -40,7 +40,7 @@
 </head>
 <body>
     <h1>Spider Server</h1>
-    <a href="{{ url_for('timelapse') }}"><h1>Timelapse</h1></a>
+    <a href="{{ url_for('history') }}"><h1>History</h1></a>
     <div class="reading" id="reading">
         Temperature: {{ recent_temperature }} <br>
         Humidity: {{ recent_rh }}
@@ -57,7 +57,7 @@
     <script>
         async function fetchLatest() {
             try {
-                const response = await fetch("/latest");
+                const response = await fetch("/data/latest");
                 if (!response.ok) {
                     console.error("Failed to fetch latest reading:", response.statusText);
                     return;

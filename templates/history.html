@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spider History</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background-color: #000;
+        }
+
+        .note {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Spider History</h1>
+
+    <a href="{{ url_for('index') }}"><h1>Home</h1></a>
+
+    <div class="chart-container">
+        <canvas id="historyChart"></canvas>
+    </div>
+
+    <div class="video-container">
+        <video controls preload="metadata">
+            <source src="/static/timelapse.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        // Fetch data from API
+        fetch('/data/history')
+            .then(response => response.json())
+            .then(data => {
+                const history = data.history;
+                
+                // Extract data for chart
+                const timestamps = history.map(entry => {
+                    const date = new Date(entry.timestamp);
+                    return date.toLocaleString('en-GB', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                });
+                
+                const temperatures = history.map(entry => entry.temperature);
+                const humidities = history.map(entry => entry.humidity);
+                
+                // Create chart
+                const ctx = document.getElementById('historyChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [
+                            {
+                                label: 'Temperature (°C)',
+                                data: temperatures,
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                yAxisID: 'y',
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Humidity (%)',
+                                data: humidities,
+                                borderColor: 'rgb(54, 162, 235)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                yAxisID: 'y1',
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Temperature & Humidity History',
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Temperature (°C)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Humidity (%)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching history data:', error);
+            });
+    </script>
+
+</body>
+</html>
