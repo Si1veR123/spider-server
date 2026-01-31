@@ -9,7 +9,7 @@ import gc
 import time
 import os
 from picamera2 import Picamera2
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import subprocess
 import threading
 
@@ -18,6 +18,7 @@ MAX_HISTORY = 12 * 60 * 60
 SAVE_DIR = "../static/pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 ROTATE_ANGLE = -90
+TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 USE_TIMELAPSE = True
 TIMELAPSE_SAVE = "../static/timelapse.mp4"
@@ -74,11 +75,21 @@ def picture_thread():
     camera.configure(camera.create_still_configuration())
     camera.start()
 
+    use_timestamp = False
+    if os.path.exists(TIMESTAMP_FONT):
+        use_timestamp = True
+        font = ImageFont.truetype(TIMESTAMP_FONT, 32)
+
     while True:
         filename = datetime.now().strftime(DATETIME_FORMAT)
         path = os.path.join(SAVE_DIR, f"{filename}.jpg")
         image = camera.capture_array()
+
         img = Image.fromarray(image).rotate(ROTATE_ANGLE, expand=True)
+        if use_timestamp:
+            draw = ImageDraw.Draw(img)
+            draw.text((20, img.height-40), filename, font=font, fill="white")
+
         img.save(path)
 
         del image
