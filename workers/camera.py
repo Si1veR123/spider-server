@@ -135,14 +135,15 @@ def timelapse_thread():
 def main():
     os.makedirs(SAVE_DIR, exist_ok=True)
 
-    if USE_TIMELAPSE and not ffmpeg_installed():
+    use_timelapse = USE_TIMELAPSE
+    if use_timelapse and not ffmpeg_installed():
         print("Warning: ffmpeg not found, disabling timelapse generation.")
-        USE_TIMELAPSE = False
+        use_timelapse = False
     
     pic_thread = threading.Thread(target=picture_thread, daemon=True)
     pic_thread.start()
 
-    if USE_TIMELAPSE:
+    if use_timelapse:
         tl_thread = threading.Thread(target=timelapse_thread, daemon=True)
         tl_thread.start()
         tl_thread.join()
