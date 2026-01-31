@@ -104,8 +104,16 @@ def history_data():
     rows = cur.fetchall()
     conn.close()
 
-    history_data = []
-    for row in rows:
+    data_point_count = request.args.get("n", default=100, type=int)
+
+    total_rows = len(rows)
+    if total_rows <= data_point_count:
+        sampled_rows = rows
+    else:
+        step = total_rows / data_point_count
+        sampled_rows = [rows[min(int(i * step), total_rows - 1)] for i in range(data_point_count)]
+
+    for row in sampled_rows:
         history_data.append({
             "timestamp": row["timestamp"],
             "temperature": row["temperature"],
