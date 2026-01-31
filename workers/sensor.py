@@ -146,6 +146,9 @@ def cleanup_old_readings():
 def main():
     init_db()
 
+    sent_temperature_warning = False
+    sent_humidity_warning = False
+
     while True:
         try:
             temp, humidity = read_sensor()
@@ -155,12 +158,22 @@ def main():
             message = None
             if temp < MIN_TEMPERATURE:
                 message = "Temperature too low!"
+                sent_temperature_warning = True
             elif temp > MAX_TEMPERATURE:
                 message = "Temperature too high!"
-            elif humidity < MIN_HUMIDITY:
+                sent_temperature_warning = True
+            else:
+                sent_temperature_warning = False
+
+            if humidity < MIN_HUMIDITY:
                 message = "Humidity too low!"
+                sent_humidity_warning = True
             elif humidity > MAX_HUMIDITY:
                 message = "Humidity too high!"
+                sent_humidity_warning = True
+            else:
+                sent_humidity_warning = False
+
             print(f"Warning message: {message}")
 
             if message and USING_GMAIL:
