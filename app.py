@@ -75,7 +75,7 @@ def auth():
 # API
 
 @app.route("/data/latest")
-def latest():
+def latest_data():
     reading = get_latest_reading()
     recent_picture_url = get_latest_picture_url()
 
@@ -90,7 +90,7 @@ def latest():
     }
 
 @app.route("/data/history")
-def history():
+def history_data():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
