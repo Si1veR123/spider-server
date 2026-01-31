@@ -69,22 +69,26 @@ def generate_timelapse():
         print("Warning: No images found for timelapse")
         return
 
-    input_fps = num_images / TIMELAPSE_LENGTH
-    input_fps = max(1, input_fps)
+    target_total_frames = TIMELAPSE_LENGTH * TIMELAPSE_FPS
 
-    # Split into chunks to reduce memory usage
-    skip_frames_per_chunk = int(input_fps * TIMELAPSE_SPLIT)
-    num_chunks = ceil(num_images / skip_frames_per_chunk)
+    if num_images < target_total_frames:
+        target_total_frames = num_images
+        actual_length = num_images / TIMELAPSE_FPS
+        print(f"Only {num_images} images available. Output will be {actual_length:.2f} seconds")
+
+    # Calculate how many input images to skip between each output frame
+    step = max(1, num_images // target_total_frames)
+    sampled_images = images[::step][:target_total_frames]
+
+    frames_per_chunk = TIMELAPSE_FPS * TIMELAPSE_SPLIT
+    num_chunks = ceil(len(sampled_images) / frames_per_chunk)
 
     chunk_files = []
 
     for chunk_i in range(num_chunks):
-        start_idx = chunk_i * skip_frames_per_chunk
-        end_idx = min(start_idx + skip_frames_per_chunk, num_images)
-
-        # Sample TIMELAPSE_FPS frames from this chunk
-        step = max(1, int(input_fps / TIMELAPSE_FPS))
-        chunk_images = images[start_idx:end_idx:step]
+        start_idx = chunk_i * frames_per_chunk
+        end_idx = min(start_idx + frames_per_chunk, len(sampled_images))
+        chunk_images = sampled_images[start_idx:end_idx]
 
         if not chunk_images:
             continue
