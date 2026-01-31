@@ -62,6 +62,8 @@ def generate_timelapse_chunk(
         return False
 
 def generate_timelapse():
+    start_time = time.time()
+
     images = sorted(filter(lambda f: f.endswith("_small.jpg"), os.listdir(SAVE_DIR)))
     num_images = len(images)
 
@@ -120,7 +122,7 @@ def generate_timelapse():
 
     try:
         subprocess.run(cmd_concat, check=True)
-        print(f"Timelapse saved to {output_path}")
+        print(f"Timelapse saved to {output_path} in {time.time() - start_time:.2f} seconds")
     except subprocess.CalledProcessError as e:
         print(f"Error in ffmpeg concat: {e}")
 
