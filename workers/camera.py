@@ -145,7 +145,7 @@ def picture_thread(generate_small=False):
         img = Image.fromarray(image).rotate(ROTATE_ANGLE, expand=True)
         if use_timestamp:
             draw = ImageDraw.Draw(img)
-            draw.text((20, img.height-100), filename, font=font, fill="white")
+            draw.text((20, 20), filename, font=font, fill="white")
 
         img.save(path)
 
