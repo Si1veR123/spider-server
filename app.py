@@ -51,6 +51,12 @@ def require_login():
     if not session.get("logged_in"):
         return redirect(url_for("auth"))
 
+@app.route("/_auth_check")
+def auth_check():
+    if session.get("logged_in"):
+        return "", 204
+    return "", 401
+
 @app.route("/auth", methods=["GET", "POST"])
 def auth():
     error = None
