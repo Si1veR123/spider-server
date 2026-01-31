@@ -104,5 +104,9 @@ def index():
         recent_picture=recent_picture_url
     )
 
+@app.route("/timelapse")
+def timelapse():
+    return render_template("timelapse.html")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, threaded=False)
