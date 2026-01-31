@@ -60,14 +60,15 @@ def generate_timelapse(
             (
                 "drawtext="
                 f"fontfile={TIMELAPSE_TIMESTAMP_FONT}:"
-                "text='%{filename\\:h\\:re:_| }':"
-            "x=20:y=h-40:"
-            "fontsize=24:"
-            "fontcolor=white:"
-            "box=1:"
-            "boxcolor=black@0.5:"
-            "boxborderw=5"
-        )]
+                "text='%{filename}':"
+                "x=20:y=h-40:"
+                "fontsize=24:"
+                "fontcolor=white:"
+                "box=1:"
+                "boxcolor=black@0.5:"
+                "boxborderw=5"
+            )
+        ]
     
     cmd += [
         "-r", str(TIMELAPSE_FPS),
