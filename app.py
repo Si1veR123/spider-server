@@ -113,6 +113,7 @@ def history_data():
         step = total_rows / data_point_count
         sampled_rows = [rows[min(int(i * step), total_rows - 1)] for i in range(data_point_count)]
 
+    history_data = []
     for row in sampled_rows:
         history_data.append({
             "timestamp": row["timestamp"],
