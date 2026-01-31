@@ -104,9 +104,12 @@ def history_data():
     rows = cur.fetchall()
     conn.close()
 
-    data_point_count = request.args.get("n", default=100, type=int)
+    data_point_count = request.args.get("n", default=100, type=int) - 1
 
     total_rows = len(rows)
+    if total_rows == 0:
+        return {"history": []}
+    
     if total_rows <= data_point_count:
         sampled_rows = rows
     else:
@@ -120,6 +123,13 @@ def history_data():
             "temperature": row["temperature"],
             "humidity": row["humidity"]
         })
+
+    # Ensure most recent reading is included
+    history_data.append({
+        "timestamp": rows[0]["timestamp"],
+        "temperature": rows[0]["temperature"],
+        "humidity": rows[0]["humidity"]
+    })
 
     return {"history": history_data}
 
