@@ -75,7 +75,7 @@
                 const noPicture = document.getElementById("no-picture");
 
                 if (data.recent_picture) {
-                    img.src = data.recent_picture + "?t=" + new Date().getTime(); // prevent caching
+                    img.src = data.recent_picture;
                     img.style.display = "block";
                     noPicture.style.display = "none";
                 } else {
