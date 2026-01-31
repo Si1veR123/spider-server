@@ -30,7 +30,7 @@ def get_latest_reading():
     return row
 
 def get_latest_picture_url():
-    pictures = sorted(os.listdir(PICTURES_PATH), reverse=True)
+    pictures = sorted(filter(lambda f: not f.endswith("_small.jpg"), os.listdir(PICTURES_PATH)), reverse=True)
     if pictures:
         recent_picture = pictures[0]
         return f"/static/pictures/{recent_picture}"
