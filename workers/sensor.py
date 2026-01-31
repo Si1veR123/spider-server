@@ -78,8 +78,11 @@ def send_email(subject: str, html: str, recipient: str):
     msg.set_content(html, subtype="html")
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        smtp.send_message(msg)
+        try:
+            smtp.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            smtp.send_message(msg)
+        except Exception as e:
+            print(f"Error sending email: {e}")
 
 def convert_temp(raw_value):
     centigrade = -45 + 175 * (raw_value / (2**16 - 1))
