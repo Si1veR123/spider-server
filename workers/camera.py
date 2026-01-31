@@ -23,7 +23,6 @@ USE_TIMELAPSE = True
 TIMELAPSE_SAVE = "../static/timelapse.mp4"
 TIMELAPSE_LENGTH = 20
 TIMELAPSE_FPS = 30
-TIMELAPSE_TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 TIMELAPSE_GENERATE_FREQUENCY = 30 * 60 # seconds
 
 def generate_timelapse(
@@ -42,35 +41,12 @@ def generate_timelapse(
     if input_fps < 1:
         input_fps = 1
 
-    use_font = True
-    if not os.path.exists(TIMELAPSE_TIMESTAMP_FONT):
-        use_font = False
-        print("Warning: Font file not found, timestamps will not be rendered.")
-
     cmd = [
         "ffmpeg",
         "-y",
         "-pattern_type", "glob",
         "-framerate", str(int(input_fps)),
-        "-i", os.path.join(image_dir, "*.jpg")
-    ]
-    if use_font:
-        cmd += [
-            "-vf",
-            (
-                "drawtext="
-                f"fontfile={TIMELAPSE_TIMESTAMP_FONT}:"
-                "text='%{filename}':"
-                "x=20:y=h-40:"
-                "fontsize=24:"
-                "fontcolor=white:"
-                "box=1:"
-                "boxcolor=black@0.5:"
-                "boxborderw=5"
-            )
-        ]
-    
-    cmd += [
+        "-i", os.path.join(image_dir, "*.jpg"),
         "-r", str(TIMELAPSE_FPS),
         "-c:v", "libx264",
         "-preset", "veryfast",
