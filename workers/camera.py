@@ -8,8 +8,9 @@ from datetime import datetime, timedelta
 import gc
 import time
 import os
-from picamera2 import Picamera2
+#from picamera2 import Picamera2
 from PIL import Image, ImageDraw, ImageFont
+from math import ceil
 import subprocess
 import threading
 
@@ -21,14 +22,46 @@ ROTATE_ANGLE = -90
 TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 USE_TIMELAPSE = True
-TIMELAPSE_SAVE = "../static/timelapse.mp4"
+TIMELAPSE_SAVE_DIR = "../static/"
 TIMELAPSE_LENGTH = 20
-TIMELAPSE_FPS = 30
+TIMELAPSE_FPS = 24
+TIMELAPSE_SPLIT = 1 # seconds, split into chunks of this when processing to reduce memory usage
 TIMELAPSE_GENERATE_FREQUENCY = 30 * 60 # seconds
 
-def generate_timelapse(
-    image_dir,
+def generate_timelapse_chunk(
+    images,
     output_path
+):
+    chunk_txt = os.path.join(TIMELAPSE_SAVE_DIR, "chunk.txt")
+    with open(chunk_txt, "w") as f:
+        for img in images:
+            f.write(f"file '{os.path.join(SAVE_DIR, img)}'\n")
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", chunk_txt,
+        "-vf", "scale=1232:1640",
+        "-r", str(TIMELAPSE_FPS),
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "28",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
+        output_path
+    ]
+
+    try:
+        subprocess.run(cmd, check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error in ffmpeg chunk: {e}")
+        return False
+
+def generate_timelapse(
+    image_dir
 ):
     images = sorted(filter(lambda f: f.endswith(".jpg"), os.listdir(image_dir)))
     num_images = len(images)
@@ -39,29 +72,53 @@ def generate_timelapse(
 
     # Input framerate controls timelapse speed
     input_fps = num_images / TIMELAPSE_LENGTH
-    if input_fps < 1:
-        input_fps = 1
+    input_fps = max(1, input_fps)
 
-    cmd = [
+    # Split into chunks to reduce memory usage
+    frames_per_chunk = int(input_fps * TIMELAPSE_SPLIT)
+    num_chunks = ceil(num_images / frames_per_chunk)
+
+    chunk_files = []
+
+    for chunk_i in range(num_chunks):
+        start_idx = chunk_i * frames_per_chunk
+        end_idx = min(start_idx + frames_per_chunk, num_images)
+
+        chunk_images = images[start_idx:end_idx]
+
+        if not chunk_images:
+            continue
+
+        chunk_output = os.path.join(TIMELAPSE_SAVE_DIR, f"timelapse_{chunk_i}.mp4")
+
+        if generate_timelapse_chunk(
+            chunk_images,
+            chunk_output
+        ):
+            chunk_files.append(chunk_output)
+
+    # Concatenate chunks
+    concat_txt = os.path.join(TIMELAPSE_SAVE_DIR, "concat_list.txt")
+    with open(concat_txt, "w") as f:
+        for chunk in chunk_files:
+            f.write(f"file '{chunk}'\n")
+
+    output_path = os.path.join(TIMELAPSE_SAVE_DIR, "timelapse.mp4")
+    cmd_concat = [
         "ffmpeg",
         "-y",
-        "-pattern_type", "glob",
-        "-framerate", str(int(input_fps)),
-        "-i", os.path.join(image_dir, "*.jpg"),
-        "-r", str(TIMELAPSE_FPS),
-        "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-crf", "28",
-        "-pix_fmt", "yuv420p",
-        "-movflags", "+faststart",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", concat_txt,
+        "-c", "copy",
         output_path
     ]
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd_concat, check=True)
         print(f"Timelapse saved to {output_path}")
     except subprocess.CalledProcessError as e:
-        print(f"Error in ffmpeg: {e}")
+        print(f"Error in ffmpeg concat: {e}")
 
 def ffmpeg_installed():
     try:
@@ -69,7 +126,7 @@ def ffmpeg_installed():
         return True
     except FileNotFoundError:
         return False
-
+"""
 def picture_thread():
     camera = Picamera2()
     camera.configure(camera.create_still_configuration())
@@ -78,7 +135,7 @@ def picture_thread():
     use_timestamp = False
     if os.path.exists(TIMESTAMP_FONT):
         use_timestamp = True
-        font = ImageFont.truetype(TIMESTAMP_FONT, 32)
+        font = ImageFont.truetype(TIMESTAMP_FONT, 64)
 
     while True:
         filename = datetime.now().strftime(DATETIME_FORMAT)
@@ -88,7 +145,7 @@ def picture_thread():
         img = Image.fromarray(image).rotate(ROTATE_ANGLE, expand=True)
         if use_timestamp:
             draw = ImageDraw.Draw(img)
-            draw.text((20, img.height-40), filename, font=font, fill="white")
+            draw.text((20, img.height-100), filename, font=font, fill="white")
 
         img.save(path)
 
@@ -112,11 +169,11 @@ def picture_thread():
                     print(f"Deleted old picture {file}")
 
         time.sleep(PICTURE_FREQUENCY)
-
+"""
 def timelapse_thread():
     while True:
         print("Generating timelapse...")
-        generate_timelapse(SAVE_DIR, TIMELAPSE_SAVE)
+        generate_timelapse(SAVE_DIR)
 
         time.sleep(TIMELAPSE_GENERATE_FREQUENCY)
 
@@ -128,15 +185,15 @@ def main():
         print("Warning: ffmpeg not found, disabling timelapse generation.")
         use_timelapse = False
     
-    pic_thread = threading.Thread(target=picture_thread, daemon=True)
-    pic_thread.start()
+    #pic_thread = threading.Thread(target=picture_thread, daemon=True)
+    #pic_thread.start()
 
     if use_timelapse:
         tl_thread = threading.Thread(target=timelapse_thread, daemon=True)
         tl_thread.start()
         tl_thread.join()
 
-    pic_thread.join()
+    #pic_thread.join()
 
 if __name__ == "__main__":
     main()
