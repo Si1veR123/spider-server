@@ -21,7 +21,7 @@ SAVE_DIR = "../static/pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 ROTATE_ANGLE = -90
 TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-SMALL_SCALE = 0.2 # scale for small images for timelapse
+SMALL_SCALE = 0.3 # scale for small images for timelapse
 
 USE_TIMELAPSE = True
 TIMELAPSE_SAVE_DIR = "../static/"
