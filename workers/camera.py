@@ -1,7 +1,8 @@
 """
 Take pictures with the Raspberry Pi camera module at regular intervals.
-
 Save to a directory with timestamp.
+
+Generate a timelapse video from the pictures at regular intervals.
 """
 
 from datetime import datetime, timedelta
@@ -20,6 +21,7 @@ SAVE_DIR = "../static/pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
 ROTATE_ANGLE = -90
 TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+SMALL_SCALE = 0.25 # scale for small images for timelapse
 
 USE_TIMELAPSE = True
 TIMELAPSE_SAVE_DIR = "../static/"
@@ -43,7 +45,6 @@ def generate_timelapse_chunk(
         "-f", "concat",
         "-safe", "0",
         "-i", chunk_txt,
-        "-vf", "scale=1232:1640",
         "-r", str(TIMELAPSE_FPS),
         "-c:v", "libx264",
         "-preset", "ultrafast",
@@ -60,10 +61,8 @@ def generate_timelapse_chunk(
         print(f"Error in ffmpeg chunk: {e}")
         return False
 
-def generate_timelapse(
-    image_dir
-):
-    images = sorted(filter(lambda f: f.endswith(".jpg"), os.listdir(image_dir)))
+def generate_timelapse():
+    images = sorted(filter(lambda f: f.endswith("_small.jpg"), os.listdir(SAVE_DIR)))
     num_images = len(images)
 
     if num_images == 0:
@@ -128,7 +127,7 @@ def ffmpeg_installed():
     except FileNotFoundError:
         return False
 
-def picture_thread():
+def picture_thread(generate_small=False):
     camera = Picamera2()
     camera.configure(camera.create_still_configuration())
     camera.start()
@@ -149,6 +148,15 @@ def picture_thread():
             draw.text((20, img.height-100), filename, font=font, fill="white")
 
         img.save(path)
+
+        if generate_small:
+            small_img = img.resize(
+                (int(img.width * SMALL_SCALE), int(img.height * SMALL_SCALE)),
+                Image.LANCZOS
+            )
+            small_path = os.path.join(SAVE_DIR, f"{filename}_small.jpg")
+            small_img.save(small_path)
+            del small_img
 
         del image
         del img
@@ -186,7 +194,7 @@ def main():
         print("Warning: ffmpeg not found, disabling timelapse generation.")
         use_timelapse = False
     
-    pic_thread = threading.Thread(target=picture_thread, daemon=True)
+    pic_thread = threading.Thread(target=picture_thread, args=(use_timelapse,), daemon=True)
     pic_thread.start()
 
     if use_timelapse:
