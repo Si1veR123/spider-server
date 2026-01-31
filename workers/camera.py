@@ -137,7 +137,6 @@ def main():
 
     if USE_TIMELAPSE and not ffmpeg_installed():
         print("Warning: ffmpeg not found, disabling timelapse generation.")
-        global USE_TIMELAPSE
         USE_TIMELAPSE = False
     
     pic_thread = threading.Thread(target=picture_thread, daemon=True)
