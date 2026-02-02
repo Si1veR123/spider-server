@@ -2,6 +2,7 @@ from math import ceil
 import subprocess
 import os
 import time
+import numpy as np
 from datetime import datetime, timedelta
 
 PICTURE_DIR = "../static/pictures"
@@ -43,8 +44,6 @@ def generate_timelapse_chunk(
         return False
 
 def generate_timelapse():
-    start_time = time.time()
-
     images = sorted(filter(lambda f: f.endswith("_small.jpg"), os.listdir(PICTURE_DIR)))
     num_images = len(images)
 
@@ -59,9 +58,14 @@ def generate_timelapse():
         actual_length = num_images / TIMELAPSE_FPS
         print(f"Only {num_images} images available. Output will be {actual_length:.2f} seconds")
 
-    # Calculate how many input images to skip between each output frame
-    step = max(1, num_images // target_total_frames)
-    sampled_images = images[::step][:target_total_frames]
+    indices = np.linspace(
+        0,
+        num_images - 1,
+        target_total_frames,
+        dtype=int
+    )
+
+    sampled_images = [images[i] for i in indices]
 
     frames_per_chunk = TIMELAPSE_FPS * TIMELAPSE_SPLIT
     num_chunks = ceil(len(sampled_images) / frames_per_chunk)
@@ -103,7 +107,7 @@ def generate_timelapse():
 
     try:
         subprocess.run(cmd_concat, check=True)
-        print(f"Timelapse saved to {output_path} in {time.time() - start_time:.2f} seconds")
+        print(f"Timelapse saved to {output_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error in ffmpeg concat: {e}")
 
@@ -120,7 +124,9 @@ if __name__ == "__main__":
     else:
         while True:
             print("Generating timelapse...")
+            start_time = time.time()
             generate_timelapse()
+            took = time.time() - start_time
+            print(f"Timelapse generation took {took:.2f} seconds")
 
-            time.sleep(TIMELAPSE_GENERATE_FREQUENCY)
-
+            time.sleep(max(TIMELAPSE_GENERATE_FREQUENCY - took, 60))

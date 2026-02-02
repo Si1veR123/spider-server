@@ -71,8 +71,12 @@ def main():
                 except ValueError:
                     continue
                 if timestamp < cutoff:
-                    os.remove(os.path.join(SAVE_DIR, file))
-                    print(f"Deleted old picture {file}")
+                    try:
+                        os.remove(os.path.join(SAVE_DIR, file))
+                        os.remove(os.path.join(SAVE_DIR, f"{timestamp_str}_small.jpg"))
+                        print(f"Deleted old picture {file} and small version")
+                    except FileNotFoundError:
+                        pass
 
         time.sleep(PICTURE_FREQUENCY)
 
