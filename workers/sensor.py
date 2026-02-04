@@ -40,21 +40,77 @@ SPIDER_WARNING_EMAIL_TEMPLATE = """
 </html>
 """
 
-MIN_TEMPERATURE = 22.0
-MAX_TEMPERATURE = 28.0
-MIN_HUMIDITY = 50.0
-MAX_HUMIDITY = 75.0
+MIN_TEMPERATURE = float(os.environ.get("MIN_TEMPERATURE", 19.0))
+MAX_TEMPERATURE = float(os.environ.get("MAX_TEMPERATURE", 28.0))
+MIN_HUMIDITY = float(os.environ.get("MIN_HUMIDITY", 50.0))
+MAX_HUMIDITY = float(os.environ.get("MAX_HUMIDITY", 78.0))
 
 # DATABASE CONFIG
 DB_FILE = "../db.sqlite3"
 FREQUENCY = 10
 MAX_HISTORY = 12 * 60 * 60
 
-# I2C CONFI
+# I2C CONFIG
 I2C_BUS = 1
 SHT40_ADDR = 0x44
 # high precision
 CMD_MEASURE = 0xFD
+
+class EmailSender:
+    def __init__(self, max_interval: int = 3 * 60 * 60):
+        self.max_interval = max_interval
+        self.active_warnings = {
+            "humidity": None,
+            "temperature": None
+        }
+        self.last_sent_times = {
+            ("humidity", "low"): datetime.min,
+            ("humidity", "high"): datetime.min,
+            ("temperature", "low"): datetime.min,
+            ("temperature", "high"): datetime.min,
+        }
+    
+    def process_values(self, humidity: float, temperature: float):
+        if humidity < MIN_HUMIDITY:
+            self.active_warnings["humidity"] = "low"
+        elif humidity > MAX_HUMIDITY:
+            self.active_warnings["humidity"] = "high"
+        else:
+            # Remove humidity warnings if back to normal
+            self.active_warnings["humidity"] = None
+
+        if temperature < MIN_TEMPERATURE:
+            self.active_warnings["temperature"] = "low"
+        elif temperature > MAX_TEMPERATURE:
+            self.active_warnings["temperature"] = "high"
+        else:
+            # Remove temperature warnings if back to normal
+            self.active_warnings["temperature"] = None
+
+        if not any(self.active_warnings.values()):
+            return
+        
+        message = ""
+        for key, value in self.active_warnings.items():
+            if value is not None:
+                message += f"{key.capitalize()} too {value}! "
+
+        print("Warning message:", message)
+
+        # Filter warnings by last sent time
+        now = datetime.now()
+        filtered_warnings = []
+        for key, value in self.active_warnings.items():
+            if value is not None and (now - self.last_sent_times[(key, value)]).total_seconds() > self.max_interval:
+                filtered_warnings.append((key, value))
+
+        if filtered_warnings:
+            for warning in filtered_warnings:
+                self.last_sent_times[warning] = now
+            
+            email = generate_warning_email_html(message, now.isoformat(), temperature, humidity)
+            send_email(message, email, GMAIL_RECIPIENT)
+            print("Sent warning email.")
 
 def generate_warning_email_html(message, timestamp, temperature, humidity):
     return SPIDER_WARNING_EMAIL_TEMPLATE.format(
@@ -146,7 +202,7 @@ def cleanup_old_readings():
 def main():
     init_db()
 
-    last_warning_time = datetime.min
+    email_sender = EmailSender()
 
     while True:
         try:
@@ -154,22 +210,8 @@ def main():
             timestamp = datetime.now().isoformat()
             print(f"[{timestamp}] Temp: {temp:.2f}°C, Humidity: {humidity:.2f}%")
 
-            message = None
-            if temp < MIN_TEMPERATURE:
-                message = "Temperature too low!"
-            elif temp > MAX_TEMPERATURE:
-                message = "Temperature too high!"
-            elif humidity < MIN_HUMIDITY:
-                message = "Humidity too low!"
-            elif humidity > MAX_HUMIDITY:
-                message = "Humidity too high!"
-            print(f"Warning message: {message}")
-
-            if message and USING_GMAIL and (datetime.now() - last_warning_time).total_seconds() > 60 * 60:
-                print("Sending warning email...")
-                html = generate_warning_email_html(message, timestamp, temp, humidity)
-                send_email(f"ALERT: {message}", html, GMAIL_RECIPIENT)
-                last_warning_time = datetime.now()
+            if USING_GMAIL:
+                email_sender.process_values(humidity, temp)
 
             insert_reading(timestamp, temp, humidity)
             cleanup_old_readings()
