@@ -33,6 +33,7 @@ def main():
         font = ImageFont.truetype(TIMESTAMP_FONT, 64)
 
     while True:
+        start = time.time()
         filename = datetime.now().strftime(DATETIME_FORMAT)
         path = os.path.join(SAVE_DIR, f"{filename}.jpg")
         image = camera.capture_array()
@@ -78,7 +79,9 @@ def main():
                     except FileNotFoundError:
                         pass
 
-        time.sleep(PICTURE_FREQUENCY)
+        elapsed = time.time() - start
+
+        time.sleep(max(1, PICTURE_FREQUENCY - elapsed))
 
 if __name__ == "__main__":
     main()
