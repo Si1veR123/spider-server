@@ -207,7 +207,7 @@ def cleanup_old_readings():
 def main():
     init_db()
 
-    email_sender = EmailSender()
+    email_sender = EmailSender(EMAIL_MAX_FREQUENCY)
 
     while True:
         try:
