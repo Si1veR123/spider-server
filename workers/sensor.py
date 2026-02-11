@@ -43,10 +43,12 @@ SPIDER_WARNING_EMAIL_TEMPLATE = """
 MIN_TEMPERATURE = float(os.environ.get("MIN_TEMPERATURE", 19.0))
 MAX_TEMPERATURE = float(os.environ.get("MAX_TEMPERATURE", 28.0))
 # Add a buffer to prevent frequent warnings when values are close to threshold
-TEMPERATURE_BUFFER = 3.0
+TEMPERATURE_BUFFER = float(os.environ.get("TEMPERATURE_BUFFER", 3.0))
 MIN_HUMIDITY = float(os.environ.get("MIN_HUMIDITY", 50.0))
 MAX_HUMIDITY = float(os.environ.get("MAX_HUMIDITY", 78.0))
-HUMIDITY_BUFFER = 5.0
+HUMIDITY_BUFFER = float(os.environ.get("HUMIDITY_BUFFER", 5.0))
+# Max frequency to send email warnings for the same warning type, seconds
+EMAIL_MAX_FREQUENCY = float(os.environ.get("EMAIL_MAX_FREQUENCY", 6 * 60 * 60))
 
 # DATABASE CONFIG
 DB_FILE = "../db.sqlite3"
