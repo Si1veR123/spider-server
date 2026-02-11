@@ -42,8 +42,11 @@ SPIDER_WARNING_EMAIL_TEMPLATE = """
 
 MIN_TEMPERATURE = float(os.environ.get("MIN_TEMPERATURE", 19.0))
 MAX_TEMPERATURE = float(os.environ.get("MAX_TEMPERATURE", 28.0))
+# Add a buffer to prevent frequent warnings when values are close to threshold
+TEMPERATURE_BUFFER = 3.0
 MIN_HUMIDITY = float(os.environ.get("MIN_HUMIDITY", 50.0))
 MAX_HUMIDITY = float(os.environ.get("MAX_HUMIDITY", 78.0))
+HUMIDITY_BUFFER = 5.0
 
 # DATABASE CONFIG
 DB_FILE = "../db.sqlite3"
@@ -75,16 +78,16 @@ class EmailSender:
             self.active_warnings["humidity"] = "low"
         elif humidity > MAX_HUMIDITY:
             self.active_warnings["humidity"] = "high"
-        else:
-            # Remove humidity warnings if back to normal
+        elif humidity - MIN_HUMIDITY > HUMIDITY_BUFFER and MAX_HUMIDITY - humidity > HUMIDITY_BUFFER:
+            # Remove humidity warnings if back to normal range by buffer amount
             self.active_warnings["humidity"] = None
 
         if temperature < MIN_TEMPERATURE:
             self.active_warnings["temperature"] = "low"
         elif temperature > MAX_TEMPERATURE:
             self.active_warnings["temperature"] = "high"
-        else:
-            # Remove temperature warnings if back to normal
+        elif temperature - MIN_TEMPERATURE > TEMPERATURE_BUFFER and MAX_TEMPERATURE - temperature > TEMPERATURE_BUFFER:
+            # Remove temperature warnings if back to normal range by buffer amount
             self.active_warnings["temperature"] = None
 
         if not any(self.active_warnings.values()):
