@@ -19,15 +19,14 @@ ROTATE_ANGLE = -90
 TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 SMALL_SCALE = 0.3
 
-def capture_image(path, rotation=ROTATE_ANGLE):
+def capture_image(path):
     subprocess.run(
         [
             "rpicam-still",
             "-o", path,
             "--nopreview",
             "--encoding", "jpg",
-            "--quality", "90",
-            "--rotation", str(rotation % 360)
+            "--quality", "90"
         ],
         check=True
     )
@@ -47,10 +46,10 @@ def main():
         path = os.path.join(SAVE_DIR, f"{filename}.jpg")
 
         # Capture using external tool
-        capture_image(path, rotation=ROTATE_ANGLE)
+        capture_image(path)
 
         # Open and rotate
-        img = Image.open(path)
+        img = Image.open(path).rotate(ROTATE_ANGLE, expand=True)
 
         # Timestamp
         if use_timestamp:
