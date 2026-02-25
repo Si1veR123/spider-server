@@ -1,5 +1,5 @@
 """
-Take pictures with rpicam-still at regular intervals.
+Take pictures with libcamera-still at regular intervals.
 Save to a directory with timestamp.
 Generate small versions for timelapse.
 """
@@ -15,18 +15,20 @@ PICTURE_FREQUENCY = 10  # seconds
 MAX_HISTORY = 12 * 60 * 60
 SAVE_DIR = "../static/pictures"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"
-ROTATE_ANGLE = -90
+ROTATE_ANGLE = -90  # degrees
 TIMESTAMP_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 SMALL_SCALE = 0.3
 
 def capture_image(path):
+    """Capture a single JPEG using libcamera-still at full resolution"""
     subprocess.run(
         [
-            "rpicam-still",
-            "-o", path,
-            "--nopreview",
-            "--encoding", "jpg",
-            "--quality", "90"
+            "libcamera-still",
+            "-n",             # no preview
+            "-t", "1",        # 1 ms timeout, grab one frame
+            "-o", path,       # output file
+            "--rotation", str((ROTATE_ANGLE + 360) % 360),  # libcamera rotation
+            "--quality", "90" # JPEG quality
         ],
         check=True
     )
@@ -45,19 +47,16 @@ def main():
         filename = datetime.now().strftime(DATETIME_FORMAT)
         path = os.path.join(SAVE_DIR, f"{filename}.jpg")
 
-        # Capture using external tool
+        # Capture using libcamera-still
         capture_image(path)
 
-        # Open and rotate
-        img = Image.open(path).rotate(ROTATE_ANGLE, expand=True)
+        # Open image for optional timestamp overlay
+        img = Image.open(path)
 
-        # Timestamp
         if use_timestamp:
             draw = ImageDraw.Draw(img)
             draw.text((20, img.height - 200), filename, font=font, fill="white")
-
-        # Save rotated version (overwrite original)
-        img.save(path)
+            img.save(path)  # overwrite original with timestamp
 
         # Create small version
         width = int(img.width * SMALL_SCALE) // 2 * 2
@@ -75,15 +74,11 @@ def main():
 
         # Cleanup old pictures
         cutoff = datetime.now() - timedelta(seconds=MAX_HISTORY)
-
         for file in os.listdir(SAVE_DIR):
-            if not file.endswith(".jpg"):
-                continue
-            if file.endswith("_small.jpg"):
+            if not file.endswith(".jpg") or file.endswith("_small.jpg"):
                 continue
 
             timestamp_str = file[:-4]
-
             try:
                 timestamp = datetime.strptime(timestamp_str, DATETIME_FORMAT)
             except ValueError:
